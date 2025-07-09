@@ -6,7 +6,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:music_player/services/audio_player_service.dart';
 import 'package:music_player/services/favorites_service.dart';
 import 'package:music_player/services/headphone_detection_service.dart';
-import 'package:music_player/services/audio_level_service.dart';
+import 'package:music_player/services/health_data_service.dart';
+import 'package:music_player/services/recents_service.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 part 'player_event.dart';
@@ -16,36 +17,42 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   final AudioPlayerService _audioPlayerService;
   final HeadphoneDetectionService _headphoneDetectionService;
   final FavoritesService _favoritesService;
-  final AudioLevelService _audioLevelService;
+  final HealthDataService _healthDataService;
+  final RecentsService _recentsService;
   StreamSubscription? _playingSubscription;
   StreamSubscription? _positionSubscription;
   StreamSubscription? _durationSubscription;
   StreamSubscription? _headphoneSubscription;
   StreamSubscription? _colorSubscription;
-  StreamSubscription? _levelSubscription;
+  StreamSubscription? _shuffleIndicesSubscription;
   Timer? _sleepTimer;
 
   PlayerBloc({
     required AudioPlayerService audioPlayerService,
     required HeadphoneDetectionService headphoneDetectionService,
     required FavoritesService favoritesService,
-    required AudioLevelService audioLevelService,
+    required HealthDataService healthDataService,
+    required RecentsService recentsService,
   })  : _audioPlayerService = audioPlayerService,
         _headphoneDetectionService = headphoneDetectionService,
         _favoritesService = favoritesService,
-        _audioLevelService = audioLevelService,
+        _healthDataService = healthDataService,
+        _recentsService = recentsService,
         super(const PlayerState()) {
     on<PlayRequested>(_onPlayRequested);
     on<PauseRequested>(_onPauseRequested);
     on<ResumeRequested>(_onResumeRequested);
     on<SeekRequested>(_onSeekRequested);
+    on<SeekToIndexRequested>(_onSeekToIndexRequested);
     on<NextRequested>(_onNextRequested);
     on<PreviousRequested>(_onPreviousRequested);
     on<ShuffleModeToggled>(_onShuffleModeToggled);
     on<LoopModeChanged>(_onLoopModeChanged);
     on<FavoriteToggled>(_onFavoriteToggled);
+    on<SmartShuffleToggled>(_onSmartShuffleToggled);
     on<SleepTimerSet>(_onSleepTimerSet);
-    on<_DecibelLevelChanged>(_onDecibelLevelChanged);
+    on<VolumeChanged>(_onVolumeChanged);
+    on<SpeedChanged>(_onSpeedChanged);
 
     _playingSubscription = _audioPlayerService.playingStream.listen((isPlaying) {
       if (isPlaying) {
@@ -77,9 +84,14 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       emit(state.copyWith(dominantColor: color));
     });
 
-    _levelSubscription = _audioLevelService.levelStream.listen((level) {
-      add(_DecibelLevelChanged(level));
+
+    _healthDataService.startTracking(_audioPlayerService.playingStream);
+
+    _shuffleIndicesSubscription = _audioPlayerService.shuffleIndicesStream.listen((indices) {
+      emit(state.copyWith(shuffleIndices: indices));
     });
+
+    _healthDataService.startTracking(_audioPlayerService.playingStream);
   }
 
   @override
@@ -89,18 +101,24 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _durationSubscription?.cancel();
     _headphoneSubscription?.cancel();
     _colorSubscription?.cancel();
-    _levelSubscription?.cancel();
+    _shuffleIndicesSubscription?.cancel();
     _sleepTimer?.cancel();
     return super.close();
+  }
+
+  void _onDecibelLevelChanged(_DecibelLevelChanged event, Emitter<PlayerState> emit) {
+    emit(state.copyWith(decibelLevel: event.level));
   }
 
   Future<void> _onPlayRequested(PlayRequested event, Emitter<PlayerState> emit) async {
     final currentSong = event.songs[event.initialIndex];
     final isFavorite = await _favoritesService.isFavorite(currentSong.id);
+    await _recentsService.addPlay(currentSong.id);
     emit(state.copyWith(
       status: PlayerStatus.loading,
       currentSong: currentSong,
       isFavorite: isFavorite,
+      playlist: event.songs,
     ));
     try {
       await _audioPlayerService.setPlaylist(event.songs, event.initialIndex);
@@ -125,6 +143,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     await _audioPlayerService.seek(event.position);
   }
 
+  Future<void> _onSeekToIndexRequested(SeekToIndexRequested event, Emitter<PlayerState> emit) async {
+    await _audioPlayerService.seek(Duration.zero, index: event.index);
+  }
+
   Future<void> _onNextRequested(NextRequested event, Emitter<PlayerState> emit) async {
     await _audioPlayerService.next();
   }
@@ -144,6 +166,17 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     final nextMode = LoopMode.values[(currentMode.index + 1) % LoopMode.values.length];
     await _audioPlayerService.setLoopMode(nextMode);
     emit(state.copyWith(loopMode: nextMode));
+  }
+
+  Future<void> _onSmartShuffleToggled(SmartShuffleToggled event, Emitter<PlayerState> emit) async {
+    final newSmartShuffleState = !state.isSmartShuffle;
+    // Akıllı karıştırma açılırsa, normal karıştırmayı kapat
+    if (newSmartShuffleState && state.isShuffle) {
+      await _audioPlayerService.setShuffleModeEnabled(false);
+      emit(state.copyWith(isSmartShuffle: newSmartShuffleState, isShuffle: false));
+    } else {
+      emit(state.copyWith(isSmartShuffle: newSmartShuffleState));
+    }
   }
 
   Future<void> _onFavoriteToggled(FavoriteToggled event, Emitter<PlayerState> emit) async {
@@ -169,7 +202,13 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     emit(state.copyWith(sleepTimerDuration: event.duration));
   }
 
-  void _onDecibelLevelChanged(_DecibelLevelChanged event, Emitter<PlayerState> emit) {
-    emit(state.copyWith(decibelLevel: event.level));
+  Future<void> _onVolumeChanged(VolumeChanged event, Emitter<PlayerState> emit) async {
+    await _audioPlayerService.setVolume(event.volume);
+    emit(state.copyWith(volume: event.volume));
+  }
+
+  Future<void> _onSpeedChanged(SpeedChanged event, Emitter<PlayerState> emit) async {
+    await _audioPlayerService.setSpeed(event.speed);
+    emit(state.copyWith(speed: event.speed));
   }
 }

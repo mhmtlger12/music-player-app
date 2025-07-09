@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 class ShuffleIconPainter extends CustomPainter {
   final bool isActive;
+  final bool isSmartShuffle;
   final Color activeColor;
   final Color? inactiveColor;
 
   ShuffleIconPainter({
     this.isActive = false,
+    this.isSmartShuffle = false,
     this.activeColor = Colors.orange,
     this.inactiveColor,
   });
@@ -37,7 +40,6 @@ class ShuffleIconPainter extends CustomPainter {
     );
     canvas.drawPath(path2, paint);
 
-    // Draw arrows
     final arrowPaint = Paint()
       ..color = isActive ? activeColor : (inactiveColor ?? Colors.white.withOpacity(0.8))
       ..style = PaintingStyle.fill;
@@ -55,10 +57,31 @@ class ShuffleIconPainter extends CustomPainter {
     arrow2.lineTo(size.width * 0.8, size.height * 0.35);
     arrow2.close();
     canvas.drawPath(arrow2, arrowPaint);
+
+    if (isSmartShuffle) {
+      final starPaint = Paint()
+        ..color = activeColor
+        ..style = PaintingStyle.fill;
+      
+      final starPath = Path();
+      final centerX = size.width / 2;
+      final centerY = size.height / 2;
+      final radius = size.width * 0.15;
+      const points = 5;
+      const angle = (pi * 2) / (points * 2);
+
+      starPath.moveTo(centerX + radius * cos(0), centerY + radius * sin(0));
+      for (int i = 1; i <= points * 2; i++) {
+        final r = i.isEven ? radius : radius / 2;
+        starPath.lineTo(centerX + r * cos(angle * i), centerY + r * sin(angle * i));
+      }
+      starPath.close();
+      canvas.drawPath(starPath, starPaint);
+    }
   }
 
   @override
   bool shouldRepaint(covariant ShuffleIconPainter oldDelegate) {
-    return oldDelegate.isActive != isActive;
+    return oldDelegate.isActive != isActive || oldDelegate.isSmartShuffle != isSmartShuffle;
   }
 }

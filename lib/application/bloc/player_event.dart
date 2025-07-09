@@ -29,6 +29,8 @@ class ShuffleModeToggled extends PlayerEvent {}
 
 class LoopModeChanged extends PlayerEvent {}
 
+class SmartShuffleToggled extends PlayerEvent {}
+
 class FavoriteToggled extends PlayerEvent {}
 
 class SleepTimerSet extends PlayerEvent {
@@ -53,4 +55,28 @@ class SeekRequested extends PlayerEvent {
 
   @override
   List<Object> get props => [position];
+}
+
+class SeekToIndexRequested extends PlayerEvent {
+  final int index;
+  const SeekToIndexRequested({required this.index});
+
+  @override
+  List<Object> get props => [index];
+}
+
+class VolumeChanged extends PlayerEvent {
+  final double volume;
+  const VolumeChanged(this.volume);
+
+  @override
+  List<Object> get props => [volume];
+}
+
+class SpeedChanged extends PlayerEvent {
+  final double speed;
+  const SpeedChanged(this.speed);
+
+  @override
+  List<Object> get props => [speed];
 }

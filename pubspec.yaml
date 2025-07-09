@@ -29,10 +29,10 @@ dependencies:
   palette_generator: ^0.3.3+3 # To extract colors from album art
   shared_preferences: ^2.2.2 # For storing favorites
   sensors_plus: ^4.0.2 # For shake detection
-  mic_stream: ^0.7.2 # For audio level monitoring (updated)
-  local_auth: ^2.1.7 # For biometric authentication
+  fl_chart: ^0.68.0 # For charts in health dashboard
   
   cupertino_icons: ^1.0.2
+  intl: ^0.18.1
 
 dev_dependencies:
   flutter_test:

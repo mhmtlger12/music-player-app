@@ -4,6 +4,8 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../application/bloc/player_bloc.dart';
 import 'playlists_screen.dart';
+import 'recents_screen.dart';
+import 'favorites_screen.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -17,6 +19,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
   List<SongModel> _allSongs = [];
   List<SongModel> _filteredSongs = [];
   final TextEditingController _searchController = TextEditingController();
+  SongSortType _sortType = SongSortType.TITLE;
+  OrderType _orderType = OrderType.ASC_OR_SMALLER;
 
   @override
   void initState() {
@@ -43,21 +47,43 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _requestPermissionAndFetchSongs() async {
-    var status = await Permission.audio.request();
+    PermissionStatus status = await Permission.audio.request();
+
     if (status.isGranted) {
-      final songs = await _audioQuery.querySongs(
-        sortType: SongSortType.TITLE,
-        orderType: OrderType.ASC_OR_SMALLER,
-        uriType: UriType.EXTERNAL,
-        ignoreCase: true,
-      );
-      setState(() {
-        _allSongs = songs;
-        _filteredSongs = songs;
-      });
+      _fetchSongs();
+    } else if (status.isPermanentlyDenied) {
+      _showPermissionPermanentlyDeniedDialog();
     } else {
       print("Storage permission denied.");
     }
+  }
+
+  void _fetchSongs() async {
+    _fetchSongs();
+  }
+
+  void _showPermissionPermanentlyDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('İzin Gerekli'),
+        content: const Text(
+            'Uygulamanın müziklerinize erişebilmesi için depolama izni vermeniz gerekmektedir. Lütfen uygulama ayarlarından izni etkinleştirin.'),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('İptal'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: const Text('Ayarları Aç'),
+            onPressed: () {
+              openAppSettings();
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   void _showAddToPlaylistSheet(SongModel song) {
@@ -114,11 +140,33 @@ class _LibraryScreenState extends State<LibraryScreen> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: const Icon(Icons.sort),
+            onPressed: _showSortOptionsDialog,
+          ),
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RecentsScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.playlist_play),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const PlaylistsScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.favorite),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FavoritesScreen()),
               );
             },
           ),
@@ -132,8 +180,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Ara...',
-                hintStyle: TextStyle(color: Colors.white54),
-                prefixIcon: Icon(Icons.search, color: Colors.white54),
+                hintStyle: const TextStyle(color: Colors.white54),
+                prefixIcon: const Icon(Icons.search, color: Colors.white54),
                 filled: true,
                 fillColor: Colors.grey.shade800,
                 border: OutlineInputBorder(
@@ -186,4 +234,92 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
   }
+  
+    void _showSortOptionsDialog() {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Sırala'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RadioListTile<SongSortType>(
+                  title: const Text('Başlık'),
+                  value: SongSortType.TITLE,
+                  groupValue: _sortType,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _sortType = value);
+                      _fetchSongs();
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                RadioListTile<SongSortType>(
+                  title: const Text('Sanatçı'),
+                  value: SongSortType.ARTIST,
+                  groupValue: _sortType,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _sortType = value);
+                      _fetchSongs();
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                RadioListTile<SongSortType>(
+                  title: const Text('Albüm'),
+                  value: SongSortType.ALBUM,
+                  groupValue: _sortType,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _sortType = value);
+                      _fetchSongs();
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                RadioListTile<SongSortType>(
+                  title: const Text('Süre'),
+                  value: SongSortType.DURATION,
+                  groupValue: _sortType,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _sortType = value);
+                      _fetchSongs();
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                RadioListTile<SongSortType>(
+                  title: const Text('Tarih'),
+                  value: SongSortType.DATE_ADDED,
+                  groupValue: _sortType,
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _sortType = value);
+                      _fetchSongs();
+                      Navigator.pop(context);
+                    }
+                  },
+                ),
+                const Divider(),
+                SwitchListTile(
+                  title: const Text('Azalan Sırada'),
+                  value: _orderType == OrderType.DESC_OR_GREATER,
+                  onChanged: (value) {
+                    setState(() {
+                      _orderType = value ? OrderType.DESC_OR_GREATER : OrderType.ASC_OR_SMALLER;
+                    });
+                    _fetchSongs();
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
 }
