@@ -13,7 +13,6 @@ class AudioPlayerService {
   final OnAudioQuery _audioQuery = OnAudioQuery();
   final StreamController<Color> _dominantColorController = StreamController.broadcast();
   
-  // Ekolayzeri burada tanımlıyoruz
   final _equalizer = AndroidEqualizer();
 
   Stream<Color> get dominantColorStream => _dominantColorController.stream;
@@ -25,6 +24,10 @@ class AudioPlayerService {
         androidAudioEffects: [_equalizer],
       ),
     );
+  }
+
+  Future<void> init() async {
+    await _equalizer.setEnabled(true);
   }
 
   Future<void> setPlaylist(List<SongModel> songs, int initialIndex) async {

@@ -13,6 +13,7 @@ import '../widgets/equalizer_icon_painter.dart';
 import '../widgets/favorite_icon_painter.dart';
 import '../widgets/sleep_timer_icon_painter.dart';
 import 'equalizer_bottom_sheet.dart';
+import '../widgets/health_indicator.dart';
 import 'package:sensors_plus/sensors_plus.dart';
 import 'dart:async';
 
@@ -333,6 +334,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                               ),
                             ),
                             const Spacer(),
+                            const HealthIndicator(),
+                            const SizedBox(height: 10),
                           ],
                         ),
                       ),

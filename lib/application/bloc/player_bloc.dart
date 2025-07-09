@@ -6,6 +6,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:music_player/services/audio_player_service.dart';
 import 'package:music_player/services/favorites_service.dart';
 import 'package:music_player/services/headphone_detection_service.dart';
+import 'package:music_player/services/audio_level_service.dart';
 import 'package:on_audio_query/on_audio_query.dart';
 
 part 'player_event.dart';
@@ -15,20 +16,24 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
   final AudioPlayerService _audioPlayerService;
   final HeadphoneDetectionService _headphoneDetectionService;
   final FavoritesService _favoritesService;
+  final AudioLevelService _audioLevelService;
   StreamSubscription? _playingSubscription;
   StreamSubscription? _positionSubscription;
   StreamSubscription? _durationSubscription;
   StreamSubscription? _headphoneSubscription;
   StreamSubscription? _colorSubscription;
+  StreamSubscription? _levelSubscription;
   Timer? _sleepTimer;
 
   PlayerBloc({
     required AudioPlayerService audioPlayerService,
     required HeadphoneDetectionService headphoneDetectionService,
     required FavoritesService favoritesService,
+    required AudioLevelService audioLevelService,
   })  : _audioPlayerService = audioPlayerService,
         _headphoneDetectionService = headphoneDetectionService,
         _favoritesService = favoritesService,
+        _audioLevelService = audioLevelService,
         super(const PlayerState()) {
     on<PlayRequested>(_onPlayRequested);
     on<PauseRequested>(_onPauseRequested);
@@ -40,6 +45,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     on<LoopModeChanged>(_onLoopModeChanged);
     on<FavoriteToggled>(_onFavoriteToggled);
     on<SleepTimerSet>(_onSleepTimerSet);
+    on<_DecibelLevelChanged>(_onDecibelLevelChanged);
 
     _playingSubscription = _audioPlayerService.playingStream.listen((isPlaying) {
       if (isPlaying) {
@@ -70,6 +76,10 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _colorSubscription = _audioPlayerService.dominantColorStream.listen((color) {
       emit(state.copyWith(dominantColor: color));
     });
+
+    _levelSubscription = _audioLevelService.levelStream.listen((level) {
+      add(_DecibelLevelChanged(level));
+    });
   }
 
   @override
@@ -79,6 +89,7 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
     _durationSubscription?.cancel();
     _headphoneSubscription?.cancel();
     _colorSubscription?.cancel();
+    _levelSubscription?.cancel();
     _sleepTimer?.cancel();
     return super.close();
   }
@@ -156,5 +167,9 @@ class PlayerBloc extends Bloc<PlayerEvent, PlayerState> {
       });
     }
     emit(state.copyWith(sleepTimerDuration: event.duration));
+  }
+
+  void _onDecibelLevelChanged(_DecibelLevelChanged event, Emitter<PlayerState> emit) {
+    emit(state.copyWith(decibelLevel: event.level));
   }
 }

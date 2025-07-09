@@ -6,7 +6,9 @@ import 'package:music_player/presentation/screens/home_screen.dart';
 import 'package:music_player/services/audio_player_service.dart';
 import 'package:music_player/services/favorites_service.dart';
 import 'package:music_player/services/headphone_detection_service.dart';
+import 'package:music_player/services/audio_level_service.dart';
 import 'package:just_audio_background/just_audio_background.dart';
+import 'package:music_player/presentation/screens/auth_screen.dart';
 
 Future<void> main() async { // async yaptık
   // Arkaplan servisini başlat
@@ -40,6 +42,7 @@ Future<void> main() async { // async yaptık
         RepositoryProvider(create: (context) => AudioPlayerService()),
         RepositoryProvider(create: (context) => HeadphoneDetectionService()),
         RepositoryProvider(create: (context) => FavoritesService()),
+        RepositoryProvider(create: (context) => AudioLevelService()),
       ],
       child: const MusicPlayerApp(),
     ),
@@ -56,6 +59,7 @@ class MusicPlayerApp extends StatelessWidget {
         audioPlayerService: RepositoryProvider.of<AudioPlayerService>(context),
         headphoneDetectionService: RepositoryProvider.of<HeadphoneDetectionService>(context),
         favoritesService: RepositoryProvider.of<FavoritesService>(context),
+        audioLevelService: RepositoryProvider.of<AudioLevelService>(context),
       ),
       child: MaterialApp(
         title: 'Ultimate Music Player',
@@ -72,7 +76,7 @@ class MusicPlayerApp extends StatelessWidget {
             secondary: Colors.orange.shade600,
           ),
         ),
-        home: const HomeScreen(),
+        home: const AuthScreen(),
       ),
     );
   }

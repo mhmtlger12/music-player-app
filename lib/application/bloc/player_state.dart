@@ -14,6 +14,7 @@ class PlayerState extends Equatable {
   final Color dominantColor;
   final bool isFavorite;
   final Duration? sleepTimerDuration;
+  final double decibelLevel;
 
   const PlayerState({
     this.status = PlayerStatus.initial,
@@ -26,6 +27,7 @@ class PlayerState extends Equatable {
     this.dominantColor = Colors.blue, // Default color
     this.isFavorite = false,
     this.sleepTimerDuration,
+    this.decibelLevel = -100.0,
   });
 
   PlayerState copyWith({
@@ -39,6 +41,7 @@ class PlayerState extends Equatable {
     Color? dominantColor,
     bool? isFavorite,
     Duration? sleepTimerDuration,
+    double? decibelLevel,
   }) {
     return PlayerState(
       status: status ?? this.status,
@@ -51,9 +54,10 @@ class PlayerState extends Equatable {
       dominantColor: dominantColor ?? this.dominantColor,
       isFavorite: isFavorite ?? this.isFavorite,
       sleepTimerDuration: sleepTimerDuration ?? this.sleepTimerDuration,
+      decibelLevel: decibelLevel ?? this.decibelLevel,
     );
   }
 
   @override
-  List<Object?> get props => [status, currentSong, position, duration, errorMessage, isShuffle, loopMode, dominantColor, isFavorite, sleepTimerDuration];
+  List<Object?> get props => [status, currentSong, position, duration, errorMessage, isShuffle, loopMode, dominantColor, isFavorite, sleepTimerDuration, decibelLevel];
 }

@@ -39,6 +39,14 @@ class SleepTimerSet extends PlayerEvent {
   List<Object> get props => []; // Nullable olduğu için props'a eklemiyoruz
 }
 
+class _DecibelLevelChanged extends PlayerEvent {
+  final double level;
+  const _DecibelLevelChanged(this.level);
+
+  @override
+  List<Object> get props => [level];
+}
+
 class SeekRequested extends PlayerEvent {
   final Duration position;
   const SeekRequested({required this.position});

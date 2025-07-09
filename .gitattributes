@@ -1,0 +1,36 @@
+# IDE-specific files
+.metadata -text
+*.iml -text
+
+# Flutter/Dart specific
+.packages -text
+.flutter-plugins -text
+.flutter-plugins-dependencies -text
+pubspec.lock -text
+
+# Build artifacts
+/build/** -text
+/android/build/** -text
+/ios/build/** -text
+
+# Generated files
+*.g.dart -text
+*.cc -text
+*.h -text
+*.swift -text
+*.java -text
+*.kt -text
+*.html -text
+*.xml -text
+*.json -text
+*.storyboard -text
+*.xib -text
+*.xcconfig -text
+*.plist -text
+*.properties -text
+*.manifest -text
+*.rc -text
+*.ico -text
+*.png -text
+*.md -text
+*.cmake -text
